@@ -1,90 +1,14 @@
-#![allow(unused)]
 
-use std::{fs::read_to_string, io::Write, ops::Deref};
+#[allow(unused)]
+mod tokenizer;
+mod tokens;
+mod test;
+
+use std::{fs::read_to_string, io::Write, };
 
 use clap::{arg, Parser};
-
-const TAB_MULTIPLIER: usize = 1;
-
-impl TokonizerTools for (usize, bool) {
-    fn to_option(self) -> Option<usize> {
-        let (i, b) = self;
-        if !b {
-            return Some(i);
-        }
-        None
-    }
-}
-
-trait TokonizerTools {
-    fn to_option(self) -> Option<usize>;
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-enum Token {
-    Char(char),
-    Word(String),
-    BraceOpen,
-    BraceClose,
-    BraceSquareClosed,
-    BraceSquareOpen,
-    WhiteSpace,
-    NewLine,
-    Comma,
-    ParenOpen,
-    ParenClose,
-    Pipe,
-    DoubleQuote,
-    SingleQuote,
-    SingleQuoteBlock(String),
-    DoubleQuoteBlock(String),
-    Tab(usize),
-}
-
-impl From<char> for Token {
-    fn from(value: char) -> Self {
-        match value {
-            '{' => Self::BraceOpen,
-            '}' => Self::BraceClose,
-            '|' => Self::Pipe,
-            '\n' => Self::NewLine,
-            ' ' => Self::WhiteSpace,
-            '\t' => Self::Tab(0),
-            '[' => Self::BraceSquareOpen,
-            ']' => Self::BraceSquareClosed,
-            ',' => Self::Comma,
-            '(' => Self::ParenOpen,
-            ')' => Self::ParenClose,
-            '"' => Self::DoubleQuote,
-            '\'' => Self::SingleQuote,
-            _ => Self::Char(value),
-        }
-    }
-}
-
-impl Token {
-    fn as_string(&self) -> String {
-        match self {
-            Token::Char(c) => c.to_string(),
-            Token::Word(w) => w.to_string(),
-            Token::BraceOpen => "{".to_string(),
-            Token::BraceClose => "}".to_string(),
-            Token::WhiteSpace => " ".to_string(),
-            Token::NewLine => "\n".to_string(),
-            Token::Pipe => "|".to_string(),
-            Token::BraceSquareOpen => "[".to_string(),
-            Token::BraceSquareClosed => "]".to_string(),
-            Token::Comma => ",".to_string(),
-            Token::ParenOpen => "(".to_string(),
-            Token::ParenClose => ")".to_string(),
-            Token::DoubleQuote => "\"".to_string(),
-            Token::SingleQuote => "'".to_string(),
-            Token::DoubleQuoteBlock(s) => format!("\"{}\"", s),
-            Token::SingleQuoteBlock(s) => format!("\"{}\"", s),
-            Token::Tab(n) => vec!["\t"; *n * TAB_MULTIPLIER].join(""),
-        }
-    }
-}
+use tokenizer::Tokonizer;
+use tokens::Token;
 
 #[derive(Parser, Debug)]
 #[command(version,about,long_about = None)]
@@ -93,81 +17,7 @@ struct AppArgs {
     filename: String,
 }
 
-struct Tokonizer {
-    index: usize,
-    tokens: Vec<Token>,
-    stack: Vec<Token>,
-}
-
-impl Tokonizer {
-    fn new(tokens: Vec<Token>) -> Self {
-        Self {
-            index: 0,
-            tokens,
-            stack: Vec::new(),
-        }
-    }
-    fn next(&mut self) {
-        self.index += 1;
-    }
-    fn prev(&mut self) {
-        self.index -= 1;
-    }
-    fn get(&self) -> Option<Token> {
-        self.tokens.get(self.index).cloned()
-    }
-    fn peak_next(&self) -> Option<Token> {
-        let index = self.index.overflowing_add(1).to_option();
-        self.tokens.get(index?).cloned()
-    }
-    fn peak_prev(&self) -> Option<Token> {
-        let index = self.index.overflowing_sub(1).to_option();
-        self.tokens.get(index?).cloned()
-    }
-    fn next_eq(&self, token: Token) -> bool {
-        if self.peak_next() == Some(token) {
-            return true;
-        }
-        false
-    }
-    fn peak_next_non_whitespace(&self, token: Token) -> Option<Token> {
-        let mut index = self.index + 1;
-        while let Some(token) = self.tokens.get(index) {
-            if token != &Token::WhiteSpace {
-                return Some(token.clone())
-            }
-            index += 1;
-        }
-        None
-    }
-    fn prev_eq(&self, token: Token) -> bool {
-        if self.peak_prev() == Some(token) {
-            return true;
-        }
-        false
-    }
-    fn is_eq(&self, token: &Token) -> bool {
-        if self.get() == Some(token.clone()) {
-            return true;
-        }
-        false
-    }
-    fn to_stack(&mut self, token: Token) {
-        self.stack.push(token.clone())
-    }
-    fn take_upto(&mut self, token: Token) -> String {
-        let mut block = String::new();
-        while !self.is_eq(&token) {
-            if let Some(token) = self.get() {
-                block.push_str(&token.as_string());
-                self.next()
-            }
-        }
-        block
-    }
-}
-
-fn gen_bear(buffer: String) -> Vec<Token> {
+fn gen_tokens(buffer: String) -> Vec<Token> {
     let tokens = buffer.chars().map(|e| Token::from(e)).collect::<Vec<_>>();
     let mut word = String::new();
     let mut t = Tokonizer::new(tokens);
@@ -191,7 +41,7 @@ fn gen_bear(buffer: String) -> Vec<Token> {
             }
             Token::DoubleQuote => {
                 t.next();
-                
+
                 let block = t.take_upto(Token::DoubleQuote);
                 t.to_stack(Token::DoubleQuoteBlock(block));
             }
@@ -215,37 +65,11 @@ fn gen_bear(buffer: String) -> Vec<Token> {
         .collect::<Vec<_>>()
 }
 
-#[test]
-fn some() {
-    let text = r#"
-def pm [ ] {
-	mut locations = [ item, item2, item3 ]
-	let    selection = abs | cselect | as | as | as
-	   let a = "this is |  should not touch | | | | "
-if $selection != null {
-		let a = foobar
-		let c = bar
-		let b = a | each { | item | item | do_somehting }
-		mpv $selection
-	}
-	
-} "#;
-
-    let stack = gen_bear(text.to_string());
-
-    dbg!(stack);
-}
-
-fn main() -> Result<(), std::io::Error> {
-    let args = AppArgs::parse();
-
-    let filename = args.filename;
-    let buffer = read_to_string(&filename)?;
-
+fn format_buffer(buffer: String) -> String {
     let mut depth = 0;
     let mut paren_depth = 0;
 
-    let mut t = Tokonizer::new(gen_bear(buffer));
+    let mut t = Tokonizer::new(gen_tokens(buffer));
 
     while let Some(token) = t.get() {
         match token {
@@ -256,7 +80,6 @@ fn main() -> Result<(), std::io::Error> {
             | Token::BraceSquareClosed
             | Token::BraceOpen
             | Token::BraceClose => {
-
                 // push current token to token_stack
                 t.to_stack(token.clone());
 
@@ -293,15 +116,28 @@ fn main() -> Result<(), std::io::Error> {
         t.next();
     }
 
-    let str = t
-        .stack
+    t.stack
         .iter()
         .map(|e| e.as_string())
         .collect::<Vec<_>>()
-        .join("");
+        .join("")
+}
+
+
+
+
+
+fn main() -> Result<(), std::io::Error> {
+    let args = AppArgs::parse();
+
+    let filename = args.filename;
+    let buffer = read_to_string(&filename)?;
+
+
+    let new_buffer = format_buffer(buffer);
 
     let mut lock = std::io::stdout().lock();
-    lock.write_all(str.as_bytes()).unwrap();
+    lock.write_all(new_buffer.as_bytes()).unwrap();
 
     Ok(())
 }
