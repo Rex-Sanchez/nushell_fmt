@@ -50,10 +50,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
             // if a slash is found it means there is a path.. taking the path untill next white
             // space or brace close or paren close
             Token::Slash => {
-                let block = t.take_upto(
-                    &[Token::WhiteSpace, Token::BraceClose ],
-                    true,
-                );
+                let block = t.take_upto(&[Token::WhiteSpace, Token::BraceClose], true);
                 t.to_stack(Token::Path(format!("{}{}", t.temp, block)));
                 t.temp.clear();
             }
@@ -88,7 +85,6 @@ fn format_buffer(buffer: String) -> String {
     let mut t = Tokonizer::new(gen_tokens(buffer));
 
     while let Some(token) = t.get() {
-        
         // push current to stack
         t.to_stack(token.clone());
 
@@ -104,8 +100,7 @@ fn format_buffer(buffer: String) -> String {
         // add whitespace if needed
         match token {
             Token::Word(_) => match t.peak_next_non_whitespace() {
-                Some(Token::Comma) => (),
-                Some(Token::NewLine) => (),
+                Some(Token::Comma) | Some(Token::NewLine) | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
 
@@ -113,14 +108,16 @@ fn format_buffer(buffer: String) -> String {
                 Some(Token::BraceOpen)
                 | Some(Token::BraceSquareOpen)
                 | Some(Token::ParenOpen)
-                | Some(Token::BraceClose) => (),
+                | Some(Token::BraceClose)
+                | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
 
             Token::BraceClose | Token::BraceSquareClosed => match t.peak_next_non_whitespace() {
                 Some(Token::BraceClose)
                 | Some(Token::BraceSquareClosed)
-                | Some(Token::ParenClose) => (),
+                | Some(Token::ParenClose)
+                | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
 
@@ -128,14 +125,16 @@ fn format_buffer(buffer: String) -> String {
                 Some(Token::BraceOpen)
                 | Some(Token::BraceSquareOpen)
                 | Some(Token::ParenOpen)
-                | Some(Token::BraceSquareClosed) => (),
+                | Some(Token::BraceSquareClosed)
+                | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
 
             Token::ParenOpen => match t.peak_next_non_whitespace() {
-                Some(Token::BraceOpen) | Some(Token::BraceSquareOpen) | Some(Token::ParenClose) => {
-                    ()
-                }
+                Some(Token::BraceOpen)
+                | Some(Token::BraceSquareOpen)
+                | Some(Token::ParenClose)
+                | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
 
@@ -144,7 +143,8 @@ fn format_buffer(buffer: String) -> String {
                 | Some(Token::BraceSquareClosed)
                 | Some(Token::ParenClose)
                 | Some(Token::Comma)
-                | Some(Token::Slash) => (),
+                | Some(Token::Slash)
+                | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
 
