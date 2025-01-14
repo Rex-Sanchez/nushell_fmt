@@ -39,7 +39,7 @@ impl Tokonizer {
         }
         false
     }
-    pub fn peak_next_non_whitespace(&self ) -> Option<Token> {
+    pub fn peak_next_non_whitespace(&self) -> Option<Token> {
         let mut index = self.index + 1;
         while let Some(token) = self.tokens.get(index) {
             if token != &Token::WhiteSpace {
@@ -114,11 +114,7 @@ impl Tokonizer {
 
         block
     }
-    pub fn take_upto_either_included_if(
-        &mut self,
-        token: &[Token],
-        if_included: Token,
-    ) -> String {
+    pub fn take_upto_either_included_if(&mut self, token: &[Token], if_included: Token) -> String {
         let mut block = String::new();
         while !self.one_of_is_eq(token) {
             if let Some(t) = self.get() {
@@ -141,6 +137,16 @@ impl Tokonizer {
         if !self.temp.is_empty() {
             self.to_stack(Token::Word(self.temp.clone()));
             self.temp.clear();
+        }
+    }
+    pub fn remove_last_whitespace_and_newline(&mut self) {
+        while let Some(t) = self.get() {
+            if self.one_of_is_eq(&[Token::WhiteSpace, Token::NewLine]) {
+                self.stack.pop();
+                self.prev();
+            } else {
+                break;
+            }
         }
     }
 }

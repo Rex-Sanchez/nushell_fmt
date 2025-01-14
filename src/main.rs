@@ -1,4 +1,6 @@
+#[cfg(test)]
 mod test;
+
 #[allow(unused)]
 mod tokenizer;
 mod tokens;
@@ -7,7 +9,7 @@ use std::{fs::read_to_string, io::Write};
 
 use clap::{arg, Parser};
 use tokenizer::Tokonizer;
-use tokens::Token;
+use tokens::{Token, TokonizerTools};
 
 #[derive(Parser, Debug)]
 #[command(version,about,long_about = None)]
@@ -78,8 +80,8 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
         .collect::<Vec<_>>()
 }
 
-fn format_buffer(buffer: String) -> String {
-    let mut depth = 0;
+pub fn format_buffer(buffer: String) -> String {
+    let mut depth: usize = 0;
     let mut paren_depth = 0;
 
     let mut t = Tokonizer::new(gen_tokens(buffer));
@@ -147,11 +149,17 @@ fn format_buffer(buffer: String) -> String {
                 | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
+            Token::DoubleQuoteBlock(_) | Token::SingleQuoteBlock(_) => {
+                match t.peak_next_non_whitespace() {
+                    Some(Token::NewLine) | None => (),
+                    _ => t.to_stack(Token::WhiteSpace),
+                }
+            }
 
-            Token::Dolar => (),
-            Token::Hash => (),
-            Token::CommentBlock(_) => (),
-            Token::Slash => (),
+            // dont add white space to these tokens
+            Token::NewLine | Token::Dolar | Token::Hash | Token::CommentBlock(_) | Token::Slash => {
+                ()
+            }
             _ => t.to_stack(Token::WhiteSpace),
         }
 
@@ -160,9 +168,11 @@ fn format_buffer(buffer: String) -> String {
             Token::NewLine => {
                 // add indent if next token is a Token::BraceClose it should substract one from depth
                 if t.next_eq(Token::BraceClose) {
-                    t.to_stack(Token::Tab(depth - 1))
+                    t.to_stack(Token::Tab(
+                        depth.overflowing_sub(1).to_option().unwrap_or_default(),
+                    ));
                 } else {
-                    t.to_stack(Token::Tab(depth))
+                    t.to_stack(Token::Tab(depth));
                 }
             }
             _ => (),
@@ -170,6 +180,8 @@ fn format_buffer(buffer: String) -> String {
 
         t.next();
     }
+
+    t.remove_last_whitespace_and_newline();
 
     t.stack
         .iter()
