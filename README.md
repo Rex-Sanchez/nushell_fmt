@@ -1,8 +1,12 @@
+# Installation
+- `cargo install --git "path to repo"`
+- `nushell_fmt -f path/to/file/that/needs/formatting.nu`
+
+
 # Intergration with neovim
 
-
 Just add this to your init.lua or a other file that gets required by init.lua
-
+make sure the cmd directory points to a valid location for binaries installed with cargo.
 
 
 ```lua
