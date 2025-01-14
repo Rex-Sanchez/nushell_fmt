@@ -48,7 +48,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
                 t.to_stack(Token::SingleQuoteBlock(block));
             }
             // if a slash is found it means there is a path.. taking the path untill next white
-            // space or
+            // space or brace close or paren close
             Token::Slash => {
                 let block = t.take_upto(
                     &[Token::WhiteSpace, Token::BraceClose, Token::ParenClose],
@@ -88,41 +88,75 @@ fn format_buffer(buffer: String) -> String {
     let mut t = Tokonizer::new(gen_tokens(buffer));
 
     while let Some(token) = t.get() {
+        
+        // push current to stack
+        t.to_stack(token.clone());
+
+        // add depth for indents
         match token {
-            Token::Word(_)
-            | Token::Pipe
-            | Token::Comma
-            | Token::BraceSquareOpen
-            | Token::BraceSquareClosed
-            | Token::DoubleQuoteBlock(_)
-            | Token::SingleQuoteBlock(_)
-            | Token::ParenOpen
-            | Token::ParenClose
-            | Token::BraceOpen
-            | Token::BraceClose => {
-                // push current token to token_stack
-                t.to_stack(token.clone());
+            Token::BraceOpen if paren_depth == 0 => depth += 1,
+            Token::BraceClose if paren_depth == 0 => depth -= 1,
+            Token::ParenOpen => paren_depth += 1,
+            Token::ParenClose => paren_depth -= 1,
+            _ => (),
+        }
 
-                // add depth for indents
-                match token {
-                    Token::BraceOpen if paren_depth == 0 => depth += 1,
-                    Token::BraceClose if paren_depth == 0 => depth -= 1,
-                    Token::ParenOpen => paren_depth += 1,
-                    Token::ParenClose => paren_depth -= 1,
-                    _ => (),
+        // add whitespace if needed
+        match token {
+            Token::Word(_) => match t.peak_next_non_whitespace() {
+                Some(Token::Comma) => (),
+                Some(Token::NewLine) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            },
+
+            Token::BraceOpen => match t.peak_next_non_whitespace() {
+                Some(Token::BraceOpen)
+                | Some(Token::BraceSquareOpen)
+                | Some(Token::ParenOpen)
+                | Some(Token::BraceClose) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            },
+
+            Token::BraceClose | Token::BraceSquareClosed => match t.peak_next_non_whitespace() {
+                Some(Token::BraceClose)
+                | Some(Token::BraceSquareClosed)
+                | Some(Token::ParenClose) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            },
+
+            Token::BraceSquareOpen => match t.peak_next_non_whitespace() {
+                Some(Token::BraceOpen)
+                | Some(Token::BraceSquareOpen)
+                | Some(Token::ParenOpen)
+                | Some(Token::BraceSquareClosed) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            },
+
+            Token::ParenOpen => match t.peak_next_non_whitespace() {
+                Some(Token::BraceOpen) | Some(Token::BraceSquareOpen) | Some(Token::ParenClose) => {
+                    ()
                 }
+                _ => t.to_stack(Token::WhiteSpace),
+            },
 
-                // add whitespace if needed
-                match t.peak_next() {
-                    Some(Token::NewLine) => (),
-                    Some(Token::Comma) => (),
-                    None | Some(_) => t.to_stack(Token::WhiteSpace),
-                };
-            }
+            Token::ParenClose => match t.peak_next_non_whitespace() {
+                Some(Token::BraceClose)
+                | Some(Token::BraceSquareClosed)
+                | Some(Token::ParenClose)
+                | Some(Token::Comma) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            },
 
+            Token::Dolar => (),
+            Token::Hash => (),
+            Token::CommentBlock(_) => (),
+            Token::Slash => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        }
+
+        // add indentation
+        match token {
             Token::NewLine => {
-                t.to_stack(token.clone());
-
                 // add indent if next token is a Token::BraceClose it should substract one from depth
                 if t.next_eq(Token::BraceClose) {
                     t.to_stack(Token::Tab(depth - 1))
@@ -130,9 +164,9 @@ fn format_buffer(buffer: String) -> String {
                     t.to_stack(Token::Tab(depth))
                 }
             }
-
-            _ => t.to_stack(token.clone()),
+            _ => (),
         }
+
         t.next();
     }
 

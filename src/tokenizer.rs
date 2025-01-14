@@ -39,7 +39,7 @@ impl Tokonizer {
         }
         false
     }
-    pub fn peak_next_non_whitespace(&self, token: Token) -> Option<Token> {
+    pub fn peak_next_non_whitespace(&self ) -> Option<Token> {
         let mut index = self.index + 1;
         while let Some(token) = self.tokens.get(index) {
             if token != &Token::WhiteSpace {
