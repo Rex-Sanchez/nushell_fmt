@@ -139,14 +139,4 @@ impl Tokonizer {
             self.temp.clear();
         }
     }
-    pub fn remove_last_whitespace_and_newline(&mut self) {
-        while let Some(t) = self.get() {
-            if self.one_of_is_eq(&[Token::WhiteSpace, Token::NewLine]) {
-                self.stack.pop();
-                self.prev();
-            } else {
-                break;
-            }
-        }
-    }
 }

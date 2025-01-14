@@ -181,13 +181,12 @@ pub fn format_buffer(buffer: String) -> String {
         t.next();
     }
 
-    t.remove_last_whitespace_and_newline();
 
     t.stack
         .iter()
         .map(|e| e.as_string())
         .collect::<Vec<_>>()
-        .join("")
+        .join("").trim_end().to_string()
 }
 
 fn main() -> Result<(), std::io::Error> {
