@@ -1,5 +1,5 @@
 
-const TAB_MULTIPLIER: usize = 1;
+const TAB_MULTIPLIER: usize = 2;
 
 impl TokonizerTools for (usize, bool) {
     fn to_option(self) -> Option<usize> {
