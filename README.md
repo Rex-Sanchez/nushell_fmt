@@ -1,3 +1,5 @@
+# This repo is under heavy dev so use at your own risk!!
+
 # Installation
 - `cargo install --git "path to repo"`
 - `nushell_fmt -f path/to/file/that/needs/formatting.nu`
