@@ -23,7 +23,7 @@ local function my_formatter()
     return
   end
 
-  local cmd = string.format('./.cargo/bin/nushell_fmt -f %s', temp_file)
+  local cmd = string.format('~/.cargo/bin/nushell_fmt -f %s', temp_file)
 
   local formatted_content = vim.fn.system(cmd)
 
