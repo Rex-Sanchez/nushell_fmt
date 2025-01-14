@@ -87,8 +87,8 @@ impl Token {
             Token::Hash => "#".to_string(),
             Token::CommentBlock(s) => s.to_string(),
             Token::Path(s) => s.to_string(),
-            Token::DoubleQuoteBlock(s) => format!("\"{}\"", s),
-            Token::SingleQuoteBlock(s) => format!("\'{}\'", s),
+            Token::DoubleQuoteBlock(s) => s.to_string(),
+            Token::SingleQuoteBlock(s) => s.to_string(),
             Token::Tab(n) => vec!["\t"; *n * TAB_MULTIPLIER].join(""),
         }
     }

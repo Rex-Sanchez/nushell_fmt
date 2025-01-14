@@ -61,10 +61,10 @@ impl Tokonizer {
         }
         false
     }
-    pub fn one_of_is_eq(&self, token: Vec<Token>) -> bool {
+    pub fn one_of_is_eq(&self, token: &[Token]) -> bool {
         if let Some(current) = self.get() {
             for t in token {
-                if current == t {
+                if current == *t {
                     return true;
                 }
             }
@@ -74,7 +74,7 @@ impl Tokonizer {
     pub fn to_stack(&mut self, token: Token) {
         self.stack.push(token.clone())
     }
-    pub fn take_upto_either(&mut self, token: Vec<Token>, include: bool) -> String {
+    pub fn take_upto(&mut self, token: &[Token], included: bool) -> String {
         let mut block = String::new();
 
         let mut depth = 0;
@@ -93,11 +93,11 @@ impl Tokonizer {
                     _ => {}
                 }
 
-                if self.one_of_is_eq(token.clone()) {
+                if !first && self.one_of_is_eq(token) {
                     if depth == 0 {
-                        if include {
+                        if included {
                             block.push_str(&t.as_string());
-                        }else {
+                        } else {
                             self.prev();
                         }
                         break;
@@ -106,41 +106,7 @@ impl Tokonizer {
 
                 block.push_str(&t.as_string());
                 self.next();
-                continue;
-            }
-            break;
-        }
-
-        block
-    }
-    pub fn take_upto_either_included(&mut self, token: Vec<Token>) -> String {
-        let mut block = String::new();
-
-        let mut depth = 0;
-
-        let mut first = true;
-
-        loop {
-            if let Some(t) = self.get() {
-                match t {
-                    Token::BraceOpen => {
-                        depth += 1;
-                    }
-                    Token::BraceClose => {
-                        depth -= 1;
-                    }
-                    _ => {}
-                }
-
-                if self.one_of_is_eq(token.clone()) {
-                    if depth == 0 {
-                        block.push_str(&t.as_string());
-                        break;
-                    }
-                }
-
-                block.push_str(&t.as_string());
-                self.next();
+                first = false;
                 continue;
             }
             break;
@@ -150,11 +116,11 @@ impl Tokonizer {
     }
     pub fn take_upto_either_included_if(
         &mut self,
-        token: Vec<Token>,
+        token: &[Token],
         if_included: Token,
     ) -> String {
         let mut block = String::new();
-        while !self.one_of_is_eq(token.clone()) {
+        while !self.one_of_is_eq(token) {
             if let Some(t) = self.get() {
                 block.push_str(&t.as_string());
                 self.next()
@@ -164,31 +130,6 @@ impl Tokonizer {
             if if_included == t {
                 block.push_str(&t.as_string());
             }
-        }
-        block
-    }
-
-    pub fn take_upto(&mut self, token: Token) -> String {
-        let mut block = String::new();
-        while !self.is_eq(&token) {
-            if let Some(token) = self.get() {
-                block.push_str(&token.as_string());
-                self.next()
-            }
-        }
-        block
-    }
-    pub fn take_upto_included(&mut self, token: Token) -> String {
-        let mut block = String::new();
-
-        while !self.is_eq(&token) {
-            if let Some(token) = self.get() {
-                block.push_str(&token.as_string());
-                self.next()
-            }
-        }
-        if let Some(token) = self.get() {
-            block.push_str(&token.as_string());
         }
         block
     }
