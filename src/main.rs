@@ -82,7 +82,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
 
 pub fn format_buffer(buffer: String) -> String {
     let mut depth: usize = 0;
-    let mut paren_depth = 0;
+    let mut paren_depth: usize = 0;
 
     let mut t = Tokonizer::new(gen_tokens(buffer));
 
@@ -93,9 +93,17 @@ pub fn format_buffer(buffer: String) -> String {
         // add depth for indents
         match token {
             Token::BraceOpen if paren_depth == 0 => depth += 1,
-            Token::BraceClose if paren_depth == 0 => depth -= 1,
+            Token::BraceClose if paren_depth == 0 => {
+                depth = depth.overflowing_sub(1).to_option().unwrap_or_default()
+            }
+
             Token::ParenOpen => paren_depth += 1,
-            Token::ParenClose => paren_depth -= 1,
+            Token::ParenClose => {
+                paren_depth = paren_depth
+                    .overflowing_sub(1)
+                    .to_option()
+                    .unwrap_or_default()
+            }
             _ => (),
         }
 
@@ -181,12 +189,16 @@ pub fn format_buffer(buffer: String) -> String {
         t.next();
     }
 
+    t.temp_to_word();
+    dbg!(&t.stack);
 
     t.stack
         .iter()
         .map(|e| e.as_string())
         .collect::<Vec<_>>()
-        .join("").trim_end().to_string()
+        .join("")
+        .trim_end()
+        .to_string()
 }
 
 fn main() -> Result<(), std::io::Error> {
