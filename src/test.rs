@@ -12,14 +12,35 @@ if $selection != null {
 		mpv $selection
 	}
 	
+  let a = glob (/home/n3m0/AnyDesk/**/*.{as,as,as})
+    let b = sssss
 } "#;
 
 
+//let format_buffer = crate::format_buffer(text.to_string());
+
+//println!("{}",format_buffer);
+
+
+
+
+
+
+
+
+
+}
+#[test]
+fn format_test1() {
+let text = r#"
+def pm [ ] {
+    let b = $"nlslslsls"
+} "#;
 
 
 let format_buffer = crate::format_buffer(text.to_string());
 
-dbg!(format_buffer);
+println!("{}",format_buffer);
 
 
 

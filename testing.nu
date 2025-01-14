@@ -10,4 +10,10 @@ def pm [ ] {
 		mpv $selection
 	}
 	
+	( bkbk ) = ( eeee )
+	
+	let a = glob ( /home/n3m0/AnyDesk/**/*.{bls,lgs,gls})
+	
+	let b = jsjsj
+	
 } 

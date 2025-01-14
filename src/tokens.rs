@@ -26,9 +26,12 @@ pub enum Token {
     WhiteSpace,
     NewLine,
     Comma,
+    Dolar,
     ParenOpen,
     ParenClose,
     Pipe,
+    Path(String),
+    Slash,
     DoubleQuote,
     SingleQuote,
     SingleQuoteBlock(String),
@@ -52,6 +55,8 @@ impl From<char> for Token {
             ')' => Self::ParenClose,
             '"' => Self::DoubleQuote,
             '\'' => Self::SingleQuote,
+            '/' => Self::Slash,
+            '$' => Self::Dolar,
             _ => Self::Char(value),
         }
     }
@@ -73,9 +78,12 @@ impl Token {
             Token::ParenOpen => "(".to_string(),
             Token::ParenClose => ")".to_string(),
             Token::DoubleQuote => "\"".to_string(),
+            Token::Dolar => "$".to_string(),
             Token::SingleQuote => "'".to_string(),
+            Token::Slash => "/".to_string(),
+            Token::Path(s) => s.to_string(),
             Token::DoubleQuoteBlock(s) => format!("\"{}\"", s),
-            Token::SingleQuoteBlock(s) => format!("\"{}\"", s),
+            Token::SingleQuoteBlock(s) => format!("\'{}\'", s),
             Token::Tab(n) => vec!["\t"; *n * TAB_MULTIPLIER].join(""),
         }
     }

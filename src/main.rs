@@ -1,10 +1,9 @@
-
+mod test;
 #[allow(unused)]
 mod tokenizer;
 mod tokens;
-mod test;
 
-use std::{fs::read_to_string, io::Write, };
+use std::{fs::read_to_string, io::Write};
 
 use clap::{arg, Parser};
 use tokenizer::Tokonizer;
@@ -19,12 +18,11 @@ struct AppArgs {
 
 fn gen_tokens(buffer: String) -> Vec<Token> {
     let tokens = buffer.chars().map(|e| Token::from(e)).collect::<Vec<_>>();
-    let mut word = String::new();
     let mut t = Tokonizer::new(tokens);
 
     while let Some(token) = t.get() {
         match token {
-            Token::Char(_) => word.push_str(&token.as_string()),
+            Token::Char(_) => t.to_temp(token.as_string()),
             Token::WhiteSpace
             | Token::NewLine
             | Token::Pipe
@@ -33,26 +31,37 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
             | Token::ParenClose
             | Token::BraceSquareOpen
             | Token::BraceSquareClosed => {
-                if !word.is_empty() {
-                    t.to_stack(Token::Word(word.clone()));
-                    word.clear();
-                }
+                // move word to stack
+                t.temp_to_word();
+
+                // push current to stack
                 t.to_stack(token);
             }
             Token::DoubleQuote => {
+                // set next index
                 t.next();
 
+                // take tokens upto DoubleQuote and add them to the stack
                 let block = t.take_upto(Token::DoubleQuote);
                 t.to_stack(Token::DoubleQuoteBlock(block));
             }
             Token::SingleQuote => {
+                // set next index
                 t.next();
 
+                // take tokens upto SingleQuote and add them to the stack
                 let block = t.take_upto(Token::SingleQuote);
                 t.to_stack(Token::SingleQuoteBlock(block));
             }
+            Token::Slash => {
+                //t.next();
+                let  block = t.take_upto_either_included([Token::WhiteSpace,Token::BraceClose].to_vec());
+                t.to_stack(Token::Path(format!("{}{}", t.temp, block)));
+                t.temp.clear();
+            }
 
             _ => {
+                // push current to stack
                 t.to_stack(token);
             }
         }
@@ -78,6 +87,10 @@ fn format_buffer(buffer: String) -> String {
             | Token::Comma
             | Token::BraceSquareOpen
             | Token::BraceSquareClosed
+            | Token::DoubleQuoteBlock(_)
+            | Token::SingleQuoteBlock(_)
+            | Token::ParenOpen
+            | Token::ParenClose
             | Token::BraceOpen
             | Token::BraceClose => {
                 // push current token to token_stack
@@ -123,16 +136,11 @@ fn format_buffer(buffer: String) -> String {
         .join("")
 }
 
-
-
-
-
 fn main() -> Result<(), std::io::Error> {
     let args = AppArgs::parse();
 
     let filename = args.filename;
     let buffer = read_to_string(&filename)?;
-
 
     let new_buffer = format_buffer(buffer);
 
