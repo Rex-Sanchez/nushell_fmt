@@ -91,5 +91,36 @@ fn more() {
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n}");
 }
+#[test]
+fn to_many_curlys() {
+    let text = "if a > 42 {\n$pos = 69\n}\n}let a = 42";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n}\n} let a = 42");
+}
+#[test]
+fn to_little_curlys() {
+    let text = "if a > 42 {\n$pos = 69\nlet a = 42";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n\t\tlet a = 42");
+}
 
- 
+ #[test]
+fn path_non_trailing_whitespace() {
+    let text = "/home/user/folder/text.lua";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "/home/user/folder/text.lua");
+}
+
+ #[test]
+fn path_with_trailing_whitespace() {
+    let text = "/home/user/folder/text.lua ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "/home/user/folder/text.lua");
+}
+
+ #[test]
+fn pipe_1() {
+    let text = "http get http://42_is_the_answer.com |from json|list ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "http get http://42_is_the_answer.com | from json | list");
+}

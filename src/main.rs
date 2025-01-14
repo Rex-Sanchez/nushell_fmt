@@ -56,7 +56,10 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
             // if a slash is found it means there is a path.. taking the path untill next white
             // space or brace close or paren close
             Token::Slash => {
-                let block = t.take_upto(&[Token::WhiteSpace, Token::BraceClose], true);
+                let block = t
+                    .take_upto(&[Token::WhiteSpace, Token::BraceClose], true)
+                    .trim_end()
+                    .to_string();
                 t.to_stack(Token::Path(format!("{}{}", t.temp, block)));
                 t.temp.clear();
             }
