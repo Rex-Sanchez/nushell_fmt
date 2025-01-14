@@ -29,7 +29,11 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
             | Token::NewLine
             | Token::Pipe
             | Token::Comma
+            | Token::Equals
             | Token::ParenOpen
+            | Token::MoreThen
+            | Token::LessThen
+            | Token::Exc
             | Token::ParenClose
             | Token::BraceSquareOpen
             | Token::BraceSquareClosed => {
@@ -120,6 +124,7 @@ pub fn format_buffer(buffer: String) -> String {
                 | Some(Token::BraceSquareOpen)
                 | Some(Token::ParenOpen)
                 | Some(Token::BraceClose)
+                | Some(Token::NewLine)
                 | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
@@ -128,6 +133,7 @@ pub fn format_buffer(buffer: String) -> String {
                 Some(Token::BraceClose)
                 | Some(Token::BraceSquareClosed)
                 | Some(Token::ParenClose)
+                | Some(Token::NewLine)
                 | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
@@ -137,6 +143,7 @@ pub fn format_buffer(buffer: String) -> String {
                 | Some(Token::BraceSquareOpen)
                 | Some(Token::ParenOpen)
                 | Some(Token::BraceSquareClosed)
+                | Some(Token::NewLine)
                 | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
@@ -145,6 +152,7 @@ pub fn format_buffer(buffer: String) -> String {
                 Some(Token::BraceOpen)
                 | Some(Token::BraceSquareOpen)
                 | Some(Token::ParenClose)
+                | Some(Token::NewLine)
                 | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
@@ -155,12 +163,19 @@ pub fn format_buffer(buffer: String) -> String {
                 | Some(Token::ParenClose)
                 | Some(Token::Comma)
                 | Some(Token::Slash)
+                | Some(Token::NewLine)
                 | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
             Token::DoubleQuoteBlock(_) | Token::SingleQuoteBlock(_) => {
                 match t.peak_next_non_whitespace() {
                     Some(Token::NewLine) | None => (),
+                    _ => t.to_stack(Token::WhiteSpace),
+                }
+            }
+            Token::Equals | Token::MoreThen | Token::LessThen | Token::Exc => {
+                match t.peak_next_non_whitespace() {
+                    Some(Token::Equals) => (),
                     _ => t.to_stack(Token::WhiteSpace),
                 }
             }
@@ -189,7 +204,6 @@ pub fn format_buffer(buffer: String) -> String {
 
         t.next();
     }
-
 
     t.stack
         .iter()

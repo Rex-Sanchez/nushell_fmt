@@ -42,4 +42,54 @@ fn whitespace_between_words() {
     assert_eq!(format_buffer, "let answer = 42");
 }
 
+#[test]
+fn if_indent() {
+    let text = "if answer == 42 {\nlet pos = 69\n}";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if answer == 42 {\n\t\tlet pos = 69\n}");
+}
 
+#[test]
+fn if_indent_nested() {
+    let text = "if answer == 42 {\nif pos == 69 {\nlet pos = 69\n}\n}";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if answer == 42 {\n\t\tif pos == 69 {\n\t\t\t\tlet pos = 69\n\t\t}\n}");
+}
+#[test]
+fn spacing() {
+    let text = "(something=this=that)";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "( something = this = that )");
+}
+#[test]
+fn not_eq() {
+    let text = "if a != 42 {\n$pos = 69\n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if a != 42 {\n\t\t$pos = 69\n}");
+}
+#[test]
+fn more_eq() {
+    let text = "if a >= 42 {\n$pos = 69\n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if a >= 42 {\n\t\t$pos = 69\n}");
+}
+#[test]
+fn less_eq() {
+    let text = "if a <= 42 {\n$pos = 69\n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if a <= 42 {\n\t\t$pos = 69\n}");
+}
+#[test]
+fn less() {
+    let text = "if a < 42 {\n$pos = 69\n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if a < 42 {\n\t\t$pos = 69\n}");
+}
+#[test]
+fn more() {
+    let text = "if a > 42 {\n$pos = 69\n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n}");
+}
+
+ 
