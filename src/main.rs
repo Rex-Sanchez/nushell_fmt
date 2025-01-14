@@ -53,11 +53,22 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
                 let block = t.take_upto(Token::SingleQuote);
                 t.to_stack(Token::SingleQuoteBlock(block));
             }
+            // if a slash is found it means there is a path.. taking the path untill next white
+            // space or 
             Token::Slash => {
-                //t.next();
-                let  block = t.take_upto_either_included([Token::WhiteSpace,Token::BraceClose].to_vec());
+                let  block = t.take_upto_either([Token::WhiteSpace,Token::BraceClose, Token::ParenClose].to_vec(),true);
                 t.to_stack(Token::Path(format!("{}{}", t.temp, block)));
                 t.temp.clear();
+            }
+
+            // Commant block
+            Token::Hash => {
+                // If line starts with a hash its a commant block.. walking upto new line and but
+                // the line in a commant_block token. formatting is ignored on this line, commant
+                // indent is still applied
+                let block = t.take_upto_either([Token::NewLine].to_vec(),false);
+                t.to_stack(Token::CommentBlock(block));
+
             }
 
             _ => {

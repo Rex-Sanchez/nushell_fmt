@@ -30,6 +30,8 @@ pub enum Token {
     ParenOpen,
     ParenClose,
     Pipe,
+    Hash,
+    CommentBlock(String),
     Path(String),
     Slash,
     DoubleQuote,
@@ -57,6 +59,7 @@ impl From<char> for Token {
             '\'' => Self::SingleQuote,
             '/' => Self::Slash,
             '$' => Self::Dolar,
+            '#' => Self::Hash,
             _ => Self::Char(value),
         }
     }
@@ -81,6 +84,8 @@ impl Token {
             Token::Dolar => "$".to_string(),
             Token::SingleQuote => "'".to_string(),
             Token::Slash => "/".to_string(),
+            Token::Hash => "#".to_string(),
+            Token::CommentBlock(s) => s.to_string(),
             Token::Path(s) => s.to_string(),
             Token::DoubleQuoteBlock(s) => format!("\"{}\"", s),
             Token::SingleQuoteBlock(s) => format!("\'{}\'", s),

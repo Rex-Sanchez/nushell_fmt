@@ -74,14 +74,43 @@ impl Tokonizer {
     pub fn to_stack(&mut self, token: Token) {
         self.stack.push(token.clone())
     }
-    pub fn take_upto_either(&mut self, token: Vec<Token>) -> String {
+    pub fn take_upto_either(&mut self, token: Vec<Token>, include: bool) -> String {
         let mut block = String::new();
-        while !self.one_of_is_eq(token.clone()) {
+
+        let mut depth = 0;
+
+        let mut first = true;
+
+        loop {
             if let Some(t) = self.get() {
+                match t {
+                    Token::BraceOpen => {
+                        depth += 1;
+                    }
+                    Token::BraceClose => {
+                        depth -= 1;
+                    }
+                    _ => {}
+                }
+
+                if self.one_of_is_eq(token.clone()) {
+                    if depth == 0 {
+                        if include {
+                            block.push_str(&t.as_string());
+                        }else {
+                            self.prev();
+                        }
+                        break;
+                    }
+                }
+
                 block.push_str(&t.as_string());
-                self.next()
+                self.next();
+                continue;
             }
+            break;
         }
+
         block
     }
     pub fn take_upto_either_included(&mut self, token: Vec<Token>) -> String {
