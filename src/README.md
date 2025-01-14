@@ -5,7 +5,7 @@ Just add this to your init.lua or a other file that gets required by init.lua
 
 
 
-```nushell
+```lua
 local function my_formatter()
   local bufnr = vim.api.nvim_get_current_buf()
   local content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
