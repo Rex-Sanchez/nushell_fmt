@@ -74,6 +74,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
         t.next();
     }
 
+    t.temp_to_word();
     t.stack
         .into_iter()
         .filter(|e| e != &Token::WhiteSpace && e != &Token::Tab(0))
@@ -189,7 +190,6 @@ pub fn format_buffer(buffer: String) -> String {
         t.next();
     }
 
-    t.temp_to_word();
     dbg!(&t.stack);
 
     t.stack
