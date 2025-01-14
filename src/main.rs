@@ -190,7 +190,6 @@ pub fn format_buffer(buffer: String) -> String {
         t.next();
     }
 
-    dbg!(&t.stack);
 
     t.stack
         .iter()

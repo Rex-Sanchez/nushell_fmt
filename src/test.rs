@@ -37,7 +37,9 @@ fn ignore_single_quote_block() {
 
 #[test]
 fn whitespace_between_words() {
-    let text = "let answer = 42";
+    let text = "let     answer   =     42";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "let answer = 42");
 }
+
+
