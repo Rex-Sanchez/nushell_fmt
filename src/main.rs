@@ -51,7 +51,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
             // space or brace close or paren close
             Token::Slash => {
                 let block = t.take_upto(
-                    &[Token::WhiteSpace, Token::BraceClose, Token::ParenClose],
+                    &[Token::WhiteSpace, Token::BraceClose ],
                     true,
                 );
                 t.to_stack(Token::Path(format!("{}{}", t.temp, block)));
@@ -143,7 +143,8 @@ fn format_buffer(buffer: String) -> String {
                 Some(Token::BraceClose)
                 | Some(Token::BraceSquareClosed)
                 | Some(Token::ParenClose)
-                | Some(Token::Comma) => (),
+                | Some(Token::Comma)
+                | Some(Token::Slash) => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
 
