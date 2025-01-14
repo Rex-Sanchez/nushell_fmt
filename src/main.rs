@@ -187,7 +187,7 @@ fn main() -> Result<(), std::io::Error> {
     let new_buffer = format_buffer(buffer);
 
     let mut lock = std::io::stdout().lock();
-    lock.write_all(new_buffer.as_bytes()).unwrap();
+    lock.write_all(new_buffer.as_bytes())?;
 
     Ok(())
 }
