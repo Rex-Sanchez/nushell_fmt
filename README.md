@@ -1,4 +1,7 @@
-# This repo is under heavy dev so use at your own risk!!
+# This repo is still under development
+While its being under development, it does function. and should not format code in a faulty way.
+if any one find a bug please write a bug report. so it can be fixed
+
 
 # Installation
 - `cargo install --git "path to repo"`
