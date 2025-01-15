@@ -35,6 +35,8 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
             | Token::LessThen
             | Token::Exc
             | Token::ParenClose
+            | Token::BraceOpen
+            | Token::BraceClose
             | Token::BraceSquareOpen
             | Token::BraceSquareClosed => {
                 // move word to stack

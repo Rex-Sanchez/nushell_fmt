@@ -207,13 +207,13 @@ fn leading_space() {
     );
 }
 
-//#[test]
-//fn indent_for_square_brace() {
-//    let text = "$a|each{\n[\n{a: a \n}\n]\n}";
-//    let format_buffer = format_buffer(text.to_string());
-//    assert_eq!(
-//        format_buffer,
-//        "$a | each {\n\t\t[\n\t\t\t\t{a: a \n\t\t\t\t}\n\t\t]\n}"
-//    );
-//}
+#[test]
+fn indent_for_square_brace() {
+    let text = "$a|each{\n[\n{\na: a \n}\n]\n}";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(
+        format_buffer,
+        "$a | each {\n\t\t[\n\t\t\t\t{\n\t\t\t\t\t\ta: a\n\t\t\t\t}\n\t\t]\n}"
+    );
+}
 
