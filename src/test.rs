@@ -167,7 +167,7 @@ fn nesting_4() {
 }
 
 #[test]
-fn mismatch_square_braces() {
+fn mismatch_square_braces_1() {
     let text = "$item | each {\n[[$in.title $in.text ] \n} ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(
@@ -175,3 +175,24 @@ fn mismatch_square_braces() {
         "$item | each {\n\t\t[[ $in.title $in.text ]\n}"
     );
 }
+
+#[test]
+fn mismatch_square_braces_2() {
+    let text = "$item | each {\n[ [ { ($in.title $in.text ] \n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(
+        format_buffer,
+        "$item | each {\n\t\t[[{( $in.title $in.text ]\n\t\t}"
+    );
+}
+
+#[test]
+fn leading_space() {
+    let text = "use ~/.cache/starship/init.nu\n$env.config.buffer_editor = \"nvim\"\n$env.config.buffer_editor = \"nvim\"";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(
+        format_buffer,
+        "use ~/.cache/starship/init.nu\n$env.config.buffer_editor = \"nvim\"\n$env.config.buffer_editor = \"nvim\""
+    );
+}
+
