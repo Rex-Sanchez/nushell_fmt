@@ -5,11 +5,13 @@ pub struct Tokonizer {
     pub tokens: Vec<Token>,
     pub stack: Vec<Token>,
     pub temp: String,
+    pub depth: usize,
 }
 
 impl Tokonizer {
     pub fn new(tokens: Vec<Token>) -> Self {
         Self {
+            depth: 0,
             index: 0,
             tokens,
             stack: Vec::new(),

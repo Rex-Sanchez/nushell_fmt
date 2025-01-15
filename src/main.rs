@@ -19,7 +19,7 @@ struct AppArgs {
 }
 
 fn gen_tokens(buffer: String) -> Vec<Token> {
-    let tokens = buffer.chars().map(|e| Token::from(e)).collect::<Vec<_>>();
+    let tokens = buffer.chars().map(Token::from).collect::<Vec<_>>();
     let mut t = Tokonizer::new(tokens);
 
     while let Some(token) = t.get() {
@@ -90,6 +90,115 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
         .collect::<Vec<_>>()
 }
 
+fn add_whitespace(t: &mut Tokonizer, current_token: &Token) {
+    match current_token {
+        Token::Word(_) => match t.peak_next_non_whitespace() {
+            Some(Token::Comma) | Some(Token::NewLine) | None => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+
+        Token::BraceOpen => match t.peak_next_non_whitespace() {
+            Some(Token::BraceOpen)
+            | Some(Token::BraceSquareOpen)
+            | Some(Token::ParenOpen)
+            | Some(Token::BraceClose)
+            | Some(Token::NewLine)
+            | None => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+
+        Token::BraceClose | Token::BraceSquareClosed => match t.peak_next_non_whitespace() {
+            Some(Token::BraceClose)
+            | Some(Token::BraceSquareClosed)
+            | Some(Token::ParenClose)
+            | Some(Token::NewLine)
+            | Some(Token::Comma)
+            | None => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+
+        Token::BraceSquareOpen => match t.peak_next_non_whitespace() {
+            Some(Token::BraceOpen)
+            | Some(Token::BraceSquareOpen)
+            | Some(Token::ParenOpen)
+            | Some(Token::BraceSquareClosed)
+            | Some(Token::NewLine)
+            | None => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+
+        Token::ParenOpen => match t.peak_next_non_whitespace() {
+            Some(Token::BraceOpen)
+            | Some(Token::BraceSquareOpen)
+            | Some(Token::ParenClose)
+            | Some(Token::NewLine)
+            | None => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+
+        Token::ParenClose => match t.peak_next_non_whitespace() {
+            Some(Token::BraceClose)
+            | Some(Token::BraceSquareClosed)
+            | Some(Token::ParenClose)
+            | Some(Token::Comma)
+            | Some(Token::Slash)
+            | Some(Token::NewLine)
+            | None => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+        Token::DoubleQuoteBlock(_) | Token::SingleQuoteBlock(_) => {
+            match t.peak_next_non_whitespace() {
+                Some(Token::NewLine) | None => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            }
+        }
+        Token::Equals | Token::MoreThen | Token::LessThen | Token::Exc => {
+            match t.peak_next_non_whitespace() {
+                Some(Token::Equals) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            }
+        }
+
+        Token::Comma => match t.peak_next_non_whitespace() {
+            Some(Token::NewLine) => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+        // dont add white space to these tokens
+        Token::NewLine | Token::Dolar | Token::Hash | Token::CommentBlock(_) | Token::Slash => (),
+        _ => t.to_stack(Token::WhiteSpace),
+    }
+}
+
+fn add_depth(token: &Token, depth: &mut usize) {
+        match token {
+            Token::BraceOpen | Token::BraceSquareOpen => *depth += 1,
+            Token::BraceClose | Token::BraceSquareClosed => {
+                *depth = depth.overflowing_sub(1).to_option().unwrap_or_default()
+            }
+            _ => (),
+        }
+ 
+
+}
+
+fn add_indent(t: &mut Tokonizer, token: &Token, depth: &mut usize){
+        match token {
+            Token::NewLine => {
+                // add indent if next token is a Token::BraceClose it should substract one from depth
+                if t.next_eq(Token::BraceClose) | t.next_eq(Token::BraceSquareClosed) {
+                    t.to_stack(Token::Tab(
+                        depth.overflowing_sub(1).to_option().unwrap_or_default(),
+                    ));
+                } else {
+                    t.to_stack(Token::Tab(depth.clone()));
+                }
+            }
+            _ => (),
+        }
+
+
+}
+
 pub fn format_buffer(buffer: String) -> String {
     let mut depth: usize = 0;
 
@@ -99,110 +208,13 @@ pub fn format_buffer(buffer: String) -> String {
         // push current to stack
         t.to_stack(token.clone());
 
-        // add depth for indents
-        match token {
-            Token::BraceOpen | Token::BraceSquareOpen=> depth += 1,
-            Token::BraceClose | Token::BraceSquareClosed  => {
-                depth = depth.overflowing_sub(1).to_option().unwrap_or_default()
-            }
+        add_depth(&token, &mut depth);
+   
+        add_whitespace(&mut t, &token);
 
-            _ => (),
-        }
 
-        // add whitespace if needed
-        match token {
-            Token::Word(_) => match t.peak_next_non_whitespace() {
-                Some(Token::Comma) | Some(Token::NewLine) | None => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            },
-
-            Token::BraceOpen => match t.peak_next_non_whitespace() {
-                Some(Token::BraceOpen)
-                | Some(Token::BraceSquareOpen)
-                | Some(Token::ParenOpen)
-                | Some(Token::BraceClose)
-                | Some(Token::NewLine)
-                | None => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            },
-
-            Token::BraceClose | Token::BraceSquareClosed => match t.peak_next_non_whitespace() {
-                Some(Token::BraceClose)
-                | Some(Token::BraceSquareClosed)
-                | Some(Token::ParenClose)
-                | Some(Token::NewLine)
-                | Some(Token::Comma)
-                | None => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            },
-
-            Token::BraceSquareOpen => match t.peak_next_non_whitespace() {
-                Some(Token::BraceOpen)
-                | Some(Token::BraceSquareOpen)
-                | Some(Token::ParenOpen)
-                | Some(Token::BraceSquareClosed)
-                | Some(Token::NewLine)
-                | None => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            },
-
-            Token::ParenOpen => match t.peak_next_non_whitespace() {
-                Some(Token::BraceOpen)
-                | Some(Token::BraceSquareOpen)
-                | Some(Token::ParenClose)
-                | Some(Token::NewLine)
-                | None => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            },
-
-            Token::ParenClose => match t.peak_next_non_whitespace() {
-                Some(Token::BraceClose)
-                | Some(Token::BraceSquareClosed)
-                | Some(Token::ParenClose)
-                | Some(Token::Comma)
-                | Some(Token::Slash)
-                | Some(Token::NewLine)
-                | None => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            },
-            Token::DoubleQuoteBlock(_) | Token::SingleQuoteBlock(_) => {
-                match t.peak_next_non_whitespace() {
-                    Some(Token::NewLine) | None => (),
-                    _ => t.to_stack(Token::WhiteSpace),
-                }
-            }
-            Token::Equals | Token::MoreThen | Token::LessThen | Token::Exc => {
-                match t.peak_next_non_whitespace() {
-                    Some(Token::Equals) => (),
-                    _ => t.to_stack(Token::WhiteSpace),
-                }
-            }
-
-            Token::Comma => match t.peak_next_non_whitespace() {
-                Some(Token::NewLine) => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            },
-            // dont add white space to these tokens
-            Token::NewLine | Token::Dolar | Token::Hash | Token::CommentBlock(_) | Token::Slash => {
-                ()
-            }
-            _ => t.to_stack(Token::WhiteSpace),
-        }
-
+        add_indent(&mut t, &token, &mut depth);
         // add indentation
-        match token {
-            Token::NewLine => {
-                // add indent if next token is a Token::BraceClose it should substract one from depth
-                if t.next_eq(Token::BraceClose) | t.next_eq(Token::BraceSquareClosed) {
-                    t.to_stack(Token::Tab(
-                        depth.overflowing_sub(1).to_option().unwrap_or_default(),
-                    ));
-                } else {
-                    t.to_stack(Token::Tab(depth));
-                }
-            }
-            _ => (),
-        }
 
         t.next();
     }
