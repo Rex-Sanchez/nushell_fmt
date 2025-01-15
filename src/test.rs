@@ -58,48 +58,56 @@ fn if_indent_nested() {
         "if answer == 42 {\n\t\tif pos == 69 {\n\t\t\t\tlet pos = 69\n\t\t}\n}"
     );
 }
+
 #[test]
 fn spacing() {
     let text = "(something=this=that)";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "( something = this = that )");
 }
+
 #[test]
 fn not_eq() {
     let text = "if a != 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "if a != 42 {\n\t\t$pos = 69\n}");
 }
+
 #[test]
 fn more_eq() {
     let text = "if a >= 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "if a >= 42 {\n\t\t$pos = 69\n}");
 }
+
 #[test]
 fn less_eq() {
     let text = "if a <= 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "if a <= 42 {\n\t\t$pos = 69\n}");
 }
+
 #[test]
 fn less() {
     let text = "if a < 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "if a < 42 {\n\t\t$pos = 69\n}");
 }
+
 #[test]
 fn more() {
     let text = "if a > 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n}");
 }
+
 #[test]
 fn to_many_curlys() {
     let text = "if a > 42 {\n$pos = 69\n}\n}let a = 42";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n}\n} let a = 42");
 }
+
 #[test]
 fn to_little_curlys() {
     let text = "if a > 42 {\n$pos = 69\nlet a = 42";
@@ -137,12 +145,14 @@ fn forloop() {
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "for i in 0..1 {\n\t\t$a = $a + 10\n}");
 }
+
 #[test]
 fn nesting_1() {
     let text = "$item | each {[$in.title $in.text ] } ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "$item | each {[ $in.title $in.text ]}");
 }
+
 #[test]
 fn nesting_2() {
     let text = "$item | each {\n[$in.title $in.text ] \n} ";
@@ -152,6 +162,7 @@ fn nesting_2() {
         "$item | each {\n\t\t[ $in.title $in.text ]\n}"
     );
 }
+
 #[test]
 fn nesting_3() {
     let text = "$item | each {\n{\nd: [$in.title $in.text ],\nb:[$in.title $in.text]\n\t\t}\n} ";
@@ -172,7 +183,7 @@ fn mismatch_square_braces_1() {
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(
         format_buffer,
-        "$item | each {\n\t\t[[ $in.title $in.text ]\n}"
+        "$item | each {\n\t\t[[ $in.title $in.text ]\n\t\t}"
     );
 }
 
@@ -182,7 +193,7 @@ fn mismatch_square_braces_2() {
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(
         format_buffer,
-        "$item | each {\n\t\t[[{( $in.title $in.text ]\n\t\t}"
+        "$item | each {\n\t\t[[{( $in.title $in.text ]\n\t\t\t\t}"
     );
 }
 
@@ -195,4 +206,14 @@ fn leading_space() {
         "use ~/.cache/starship/init.nu\n$env.config.buffer_editor = \"nvim\"\n$env.config.buffer_editor = \"nvim\""
     );
 }
+
+//#[test]
+//fn indent_for_square_brace() {
+//    let text = "$a|each{\n[\n{a: a \n}\n]\n}";
+//    let format_buffer = format_buffer(text.to_string());
+//    assert_eq!(
+//        format_buffer,
+//        "$a | each {\n\t\t[\n\t\t\t\t{a: a \n\t\t\t\t}\n\t\t]\n}"
+//    );
+//}
 

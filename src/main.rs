@@ -90,7 +90,6 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
 
 pub fn format_buffer(buffer: String) -> String {
     let mut depth: usize = 0;
-    let mut paren_depth: usize = 0;
 
     let mut t = Tokonizer::new(gen_tokens(buffer));
 
@@ -100,18 +99,11 @@ pub fn format_buffer(buffer: String) -> String {
 
         // add depth for indents
         match token {
-            Token::BraceOpen if paren_depth == 0 => depth += 1,
-            Token::BraceClose if paren_depth == 0 => {
+            Token::BraceOpen | Token::BraceSquareOpen=> depth += 1,
+            Token::BraceClose | Token::BraceSquareClosed  => {
                 depth = depth.overflowing_sub(1).to_option().unwrap_or_default()
             }
 
-            Token::ParenOpen => paren_depth += 1,
-            Token::ParenClose => {
-                paren_depth = paren_depth
-                    .overflowing_sub(1)
-                    .to_option()
-                    .unwrap_or_default()
-            }
             _ => (),
         }
 
@@ -184,10 +176,10 @@ pub fn format_buffer(buffer: String) -> String {
                 }
             }
 
-            Token::Comma => match t.peak_next_non_whitespace(){
+            Token::Comma => match t.peak_next_non_whitespace() {
                 Some(Token::NewLine) => (),
                 _ => t.to_stack(Token::WhiteSpace),
-            }
+            },
             // dont add white space to these tokens
             Token::NewLine | Token::Dolar | Token::Hash | Token::CommentBlock(_) | Token::Slash => {
                 ()
@@ -199,7 +191,7 @@ pub fn format_buffer(buffer: String) -> String {
         match token {
             Token::NewLine => {
                 // add indent if next token is a Token::BraceClose it should substract one from depth
-                if t.next_eq(Token::BraceClose) {
+                if t.next_eq(Token::BraceClose) | t.next_eq(Token::BraceSquareClosed) {
                     t.to_stack(Token::Tab(
                         depth.overflowing_sub(1).to_option().unwrap_or_default(),
                     ));

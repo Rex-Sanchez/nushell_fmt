@@ -60,7 +60,7 @@ impl Tokonizer {
             return true;
         }
         false
-    }
+    } 
     pub fn one_of_is_eq(&self, token: &[Token]) -> bool {
         if let Some(current) = self.get() {
             for t in token {
