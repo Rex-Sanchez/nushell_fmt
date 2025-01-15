@@ -137,6 +137,7 @@ pub fn format_buffer(buffer: String) -> String {
                 | Some(Token::BraceSquareClosed)
                 | Some(Token::ParenClose)
                 | Some(Token::NewLine)
+                | Some(Token::Comma)
                 | None => (),
                 _ => t.to_stack(Token::WhiteSpace),
             },
@@ -183,6 +184,10 @@ pub fn format_buffer(buffer: String) -> String {
                 }
             }
 
+            Token::Comma => match t.peak_next_non_whitespace(){
+                Some(Token::NewLine) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            }
             // dont add white space to these tokens
             Token::NewLine | Token::Dolar | Token::Hash | Token::CommentBlock(_) | Token::Slash => {
                 ()

@@ -53,7 +53,10 @@ fn if_indent() {
 fn if_indent_nested() {
     let text = "if answer == 42 {\nif pos == 69 {\nlet pos = 69\n}\n}";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if answer == 42 {\n\t\tif pos == 69 {\n\t\t\t\tlet pos = 69\n\t\t}\n}");
+    assert_eq!(
+        format_buffer,
+        "if answer == 42 {\n\t\tif pos == 69 {\n\t\t\t\tlet pos = 69\n\t\t}\n}"
+    );
 }
 #[test]
 fn spacing() {
@@ -104,23 +107,71 @@ fn to_little_curlys() {
     assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n\t\tlet a = 42");
 }
 
- #[test]
+#[test]
 fn path_non_trailing_whitespace() {
     let text = "/home/user/folder/text.lua";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "/home/user/folder/text.lua");
 }
 
- #[test]
+#[test]
 fn path_with_trailing_whitespace() {
     let text = "/home/user/folder/text.lua ";
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(format_buffer, "/home/user/folder/text.lua");
 }
 
- #[test]
+#[test]
 fn pipe_1() {
     let text = "http get http://42_is_the_answer.com |from json|list ";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "http get http://42_is_the_answer.com | from json | list");
+    assert_eq!(
+        format_buffer,
+        "http get http://42_is_the_answer.com | from json | list"
+    );
+}
+
+#[test]
+fn forloop() {
+    let text = "for i in 0..1 {\n$a = $a + 10\n}";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "for i in 0..1 {\n\t\t$a = $a + 10\n}");
+}
+#[test]
+fn nesting_1() {
+    let text = "$item | each {[$in.title $in.text ] } ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "$item | each {[ $in.title $in.text ]}");
+}
+#[test]
+fn nesting_2() {
+    let text = "$item | each {\n[$in.title $in.text ] \n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(
+        format_buffer,
+        "$item | each {\n\t\t[ $in.title $in.text ]\n}"
+    );
+}
+#[test]
+fn nesting_3() {
+    let text = "$item | each {\n{\nd: [$in.title $in.text ],\nb:[$in.title $in.text]\n\t\t}\n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "$item | each {\n\t\t{\n\t\t\t\td: [ $in.title $in.text ],\n\t\t\t\tb: [ $in.title $in.text ]\n\t\t}\n}");
+}
+
+#[test]
+fn nesting_4() {
+    let text = "$item | each {\n{\nd: [$in.title [$in.text] ],\nb:[$in.title $in.text]\n\t\t}\n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(format_buffer, "$item | each {\n\t\t{\n\t\t\t\td: [ $in.title [ $in.text ]],\n\t\t\t\tb: [ $in.title $in.text ]\n\t\t}\n}");
+}
+
+#[test]
+fn mismatch_square_braces() {
+    let text = "$item | each {\n[[$in.title $in.text ] \n} ";
+    let format_buffer = format_buffer(text.to_string());
+    assert_eq!(
+        format_buffer,
+        "$item | each {\n\t\t[[ $in.title $in.text ]\n}"
+    );
 }
