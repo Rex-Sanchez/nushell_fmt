@@ -46,13 +46,17 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
                 t.to_stack(token);
             }
             Token::DoubleQuote => {
+
                 // take tokens upto DoubleQuote and add them to the stack
                 let block = t.take_upto(&[Token::DoubleQuote], true);
+                
                 t.to_stack(Token::DoubleQuoteBlock(block));
             }
             Token::SingleQuote => {
+                
                 // take tokens upto SingleQuote and add them to the stack
                 let block = t.take_upto(&[Token::SingleQuote], true);
+                
                 t.to_stack(Token::SingleQuoteBlock(block));
             }
             // if a slash is found it means there is a path.. taking the path untill next white
@@ -62,6 +66,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
                     .take_upto(&[Token::WhiteSpace, Token::BraceClose], true)
                     .trim_end()
                     .to_string();
+                
                 t.to_stack(Token::Path(format!("{}{}", t.temp, block)));
                 t.temp.clear();
             }
@@ -72,6 +77,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
                 // the line in a commant_block token. formatting is ignored on this line, commant
                 // indent is still applied
                 let block = t.take_upto(&[Token::NewLine], false);
+                
                 t.to_stack(Token::CommentBlock(block));
             }
 
@@ -90,8 +96,8 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
         .collect::<Vec<_>>()
 }
 
-fn add_whitespace(t: &mut Tokonizer, current_token: &Token) {
-    match current_token {
+fn add_whitespace(t: &mut Tokonizer, token: &Token) {
+    match token {
         Token::Word(_) => match t.peak_next_non_whitespace() {
             Some(Token::Comma) | Some(Token::NewLine) | None => (),
             _ => t.to_stack(Token::WhiteSpace),
@@ -163,6 +169,7 @@ fn add_whitespace(t: &mut Tokonizer, current_token: &Token) {
             Some(Token::NewLine) => (),
             _ => t.to_stack(Token::WhiteSpace),
         },
+
         // dont add white space to these tokens
         Token::NewLine | Token::Dolar | Token::Hash | Token::CommentBlock(_) | Token::Slash => (),
         _ => t.to_stack(Token::WhiteSpace),
@@ -170,62 +177,57 @@ fn add_whitespace(t: &mut Tokonizer, current_token: &Token) {
 }
 
 fn add_depth(token: &Token, depth: &mut usize) {
-        match token {
-            Token::BraceOpen | Token::BraceSquareOpen => *depth += 1,
-            Token::BraceClose | Token::BraceSquareClosed => {
-                *depth = depth.overflowing_sub(1).to_option().unwrap_or_default()
-            }
-            _ => (),
+    match token {
+        Token::BraceOpen | Token::BraceSquareOpen => *depth += 1,
+        Token::BraceClose | Token::BraceSquareClosed => {
+            *depth = depth.overflowing_sub(1).to_option().unwrap_or_default()
         }
- 
-
+        _ => (),
+    }
 }
 
-fn add_indent(t: &mut Tokonizer, token: &Token, depth: &mut usize){
-        match token {
-            Token::NewLine => {
-                // add indent if next token is a Token::BraceClose it should substract one from depth
-                if t.next_eq(Token::BraceClose) | t.next_eq(Token::BraceSquareClosed) {
-                    t.to_stack(Token::Tab(
-                        depth.overflowing_sub(1).to_option().unwrap_or_default(),
-                    ));
-                } else {
-                    t.to_stack(Token::Tab(depth.clone()));
-                }
+fn add_indent(t: &mut Tokonizer, token: &Token, depth: &mut usize) {
+    match token {
+        Token::NewLine => {
+
+            // add indent if next token is a Token::BraceClose it should substract one from depth
+            if t.next_eq(Token::BraceClose) | t.next_eq(Token::BraceSquareClosed) {
+                t.to_stack(Token::Tab(
+                    depth.overflowing_sub(1).to_option().unwrap_or_default(),
+                ));
+            } else {
+                t.to_stack(Token::Tab(depth.clone()));
             }
-            _ => (),
         }
+        _ => (),
+    }
+}
 
-
+impl ToString for Tokonizer {
+    fn to_string(&self) -> String {
+        self.stack
+            .iter()
+            .map(|e| e.as_string())
+            .collect::<String>()
+            .trim_end()
+            .to_string()
+    }
 }
 
 pub fn format_buffer(buffer: String) -> String {
-    let mut depth: usize = 0;
 
+    let mut depth: usize = 0;
     let mut t = Tokonizer::new(gen_tokens(buffer));
 
     while let Some(token) = t.get() {
-        // push current to stack
         t.to_stack(token.clone());
-
         add_depth(&token, &mut depth);
-   
         add_whitespace(&mut t, &token);
-
-
         add_indent(&mut t, &token, &mut depth);
-        // add indentation
-
         t.next();
     }
 
-    t.stack
-        .iter()
-        .map(|e| e.as_string())
-        .collect::<Vec<_>>()
-        .join("")
-        .trim_end()
-        .to_string()
+    t.to_string()
 }
 
 fn main() -> Result<(), std::io::Error> {
