@@ -38,25 +38,25 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
             | Token::BraceOpen
             | Token::BraceClose
             | Token::BraceSquareOpen
-            | Token::BraceSquareClosed => {
+            | Token::BraceSquareClosed
+            | Token::Tilda
+            | Token::Colon => {
                 // move word to stack
-                t.temp_to_word();
+                t.temp_to_word_or_number();
 
                 // push current to stack
                 t.to_stack(token);
             }
             Token::DoubleQuote => {
-
                 // take tokens upto DoubleQuote and add them to the stack
                 let block = t.take_upto(&[Token::DoubleQuote], true);
-                
+
                 t.to_stack(Token::DoubleQuoteBlock(block));
             }
             Token::SingleQuote => {
-                
                 // take tokens upto SingleQuote and add them to the stack
                 let block = t.take_upto(&[Token::SingleQuote], true);
-                
+
                 t.to_stack(Token::SingleQuoteBlock(block));
             }
             // if a slash is found it means there is a path.. taking the path untill next white
@@ -66,8 +66,17 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
                     .take_upto(&[Token::WhiteSpace, Token::BraceClose], true)
                     .trim_end()
                     .to_string();
-                
+
                 t.to_stack(Token::Path(format!("{}{}", t.temp, block)));
+                t.temp.clear();
+            }
+            Token::Att=> {
+                let block = t
+                    .take_upto(&[Token::NewLine], false)
+                    .trim_end()
+                    .to_string();
+
+                t.to_stack(Token::AttSomething(format!("{}{}", t.temp, block)));
                 t.temp.clear();
             }
 
@@ -77,7 +86,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
                 // the line in a commant_block token. formatting is ignored on this line, commant
                 // indent is still applied
                 let block = t.take_upto(&[Token::NewLine], false);
-                
+
                 t.to_stack(Token::CommentBlock(block));
             }
 
@@ -89,7 +98,7 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
         t.next();
     }
 
-    t.temp_to_word();
+    t.temp_to_word_or_number();
     t.stack
         .into_iter()
         .filter(|e| e != &Token::WhiteSpace && e != &Token::Tab(0))
@@ -99,9 +108,17 @@ fn gen_tokens(buffer: String) -> Vec<Token> {
 fn add_whitespace(t: &mut Tokonizer, token: &Token) {
     match token {
         Token::Word(_) => match t.peak_next_non_whitespace() {
-            Some(Token::Comma) | Some(Token::NewLine) | None => (),
+            Some(Token::Comma) | Some(Token::NewLine) | Some(Token::Colon) | Some(Token::MoreThen) | None => (),
+            Some(Token::LessThen) => match t.peak_prev_non_whitespace() {
+                Some(Token::Colon) => (),
+                _ => t.to_stack(Token::WhiteSpace),
+            },
             _ => t.to_stack(Token::WhiteSpace),
         },
+        Token::Number(_) => match t.peak_next_non_whitespace() {
+            Some(Token::NewLine) => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        }
 
         Token::BraceOpen => match t.peak_next_non_whitespace() {
             Some(Token::BraceOpen)
@@ -158,15 +175,21 @@ fn add_whitespace(t: &mut Tokonizer, token: &Token) {
                 _ => t.to_stack(Token::WhiteSpace),
             }
         }
-        Token::Equals | Token::MoreThen | Token::LessThen | Token::Exc => {
-            match t.peak_next_non_whitespace() {
-                Some(Token::Equals) => (),
-                _ => t.to_stack(Token::WhiteSpace),
-            }
-        }
+        Token::Equals | Token::MoreThen | Token::Exc => match t.peak_next_non_whitespace() {
+            Some(Token::Equals) | Some(Token::Tilda) => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
 
         Token::Comma => match t.peak_next_non_whitespace() {
             Some(Token::NewLine) => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+        Token::Colon | Token::Tilda => match t.peak_next_non_whitespace() {
+            Some(Token::Path(_)) => (),
+            _ => t.to_stack(Token::WhiteSpace),
+        },
+        Token::LessThen => match t.peak_next_non_whitespace() {
+            Some(Token::Equals) | Some(Token::Word(_)) => (),
             _ => t.to_stack(Token::WhiteSpace),
         },
 
@@ -178,8 +201,8 @@ fn add_whitespace(t: &mut Tokonizer, token: &Token) {
 
 fn add_depth(token: &Token, depth: &mut usize) {
     match token {
-        Token::BraceOpen | Token::BraceSquareOpen => *depth += 1,
-        Token::BraceClose | Token::BraceSquareClosed => {
+        Token::BraceOpen | Token::BraceSquareOpen | Token::ParenOpen => *depth += 1,
+        Token::BraceClose | Token::BraceSquareClosed | Token::ParenClose => {
             *depth = depth.overflowing_sub(1).to_option().unwrap_or_default()
         }
         _ => (),
@@ -189,9 +212,11 @@ fn add_depth(token: &Token, depth: &mut usize) {
 fn add_indent(t: &mut Tokonizer, token: &Token, depth: &mut usize) {
     match token {
         Token::NewLine => {
-
             // add indent if next token is a Token::BraceClose it should substract one from depth
-            if t.next_eq(Token::BraceClose) | t.next_eq(Token::BraceSquareClosed) {
+            if t.next_eq(Token::BraceClose)
+                | t.next_eq(Token::BraceSquareClosed)
+                | t.next_eq(Token::ParenClose)
+            {
                 t.to_stack(Token::Tab(
                     depth.overflowing_sub(1).to_option().unwrap_or_default(),
                 ));
@@ -215,7 +240,6 @@ impl ToString for Tokonizer {
 }
 
 pub fn format_buffer(buffer: String) -> String {
-
     let mut depth: usize = 0;
     let mut t = Tokonizer::new(gen_tokens(buffer));
 

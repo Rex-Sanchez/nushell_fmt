@@ -51,6 +51,17 @@ impl Tokonizer {
         }
         None
     }
+    pub fn peak_prev_non_whitespace(&self) -> Option<Token> {
+        let mut index = self.index.overflowing_sub(1).to_option()?;
+        while let Some(token) = self.tokens.get(index) {
+            if token != &Token::WhiteSpace {
+                return Some(token.clone());
+            }
+            index.overflowing_sub(1).to_option()?;
+        }
+        None
+    }
+
     pub fn prev_eq(&self, token: Token) -> bool {
         if self.peak_prev() == Some(token) {
             return true;
@@ -62,7 +73,7 @@ impl Tokonizer {
             return true;
         }
         false
-    } 
+    }
     pub fn one_of_is_eq(&self, token: &[Token]) -> bool {
         if let Some(current) = self.get() {
             for t in token {
@@ -135,9 +146,13 @@ impl Tokonizer {
     pub fn to_temp(&mut self, s: String) {
         self.temp.push_str(&s);
     }
-    pub fn temp_to_word(&mut self) {
+    pub fn temp_to_word_or_number(&mut self) {
         if !self.temp.is_empty() {
-            self.to_stack(Token::Word(self.temp.clone()));
+            if self.temp.parse::<usize>().ok().is_some() {
+                self.to_stack(Token::Number(self.temp.clone()));
+            } else {
+                self.to_stack(Token::Word(self.temp.clone()));
+            }
             self.temp.clear();
         }
     }

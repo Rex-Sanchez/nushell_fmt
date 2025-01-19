@@ -68,51 +68,51 @@ fn spacing() {
 
 #[test]
 fn not_eq() {
-    let text = "if a != 42 {\n$pos = 69\n} ";
+    let text = "if 2 != 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if a != 42 {\n\t\t$pos = 69\n}");
+    assert_eq!(format_buffer, "if 2 != 42 {\n\t\t$pos = 69\n}");
 }
 
 #[test]
 fn more_eq() {
-    let text = "if a >= 42 {\n$pos = 69\n} ";
+    let text = "if 2 >= 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if a >= 42 {\n\t\t$pos = 69\n}");
+    assert_eq!(format_buffer, "if 2 >= 42 {\n\t\t$pos = 69\n}");
 }
 
 #[test]
 fn less_eq() {
-    let text = "if a <= 42 {\n$pos = 69\n} ";
+    let text = "if 2 <= 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if a <= 42 {\n\t\t$pos = 69\n}");
+    assert_eq!(format_buffer, "if 2 <= 42 {\n\t\t$pos = 69\n}");
 }
 
 #[test]
 fn less() {
-    let text = "if a < 42 {\n$pos = 69\n} ";
+    let text = "if 2 < 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if a < 42 {\n\t\t$pos = 69\n}");
+    assert_eq!(format_buffer, "if 2 < 42 {\n\t\t$pos = 69\n}");
 }
 
 #[test]
 fn more() {
-    let text = "if a > 42 {\n$pos = 69\n} ";
+    let text = "if 1 > 42 {\n$pos = 69\n} ";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n}");
+    assert_eq!(format_buffer, "if 1 > 42 {\n\t\t$pos = 69\n}");
 }
 
 #[test]
 fn to_many_curlys() {
-    let text = "if a > 42 {\n$pos = 69\n}\n}let a = 42";
+    let text = "if 1 > 42 {\n$pos = 69\n}\n}let a = 42";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n}\n} let a = 42");
+    assert_eq!(format_buffer, "if 1 > 42 {\n\t\t$pos = 69\n}\n} let a = 42");
 }
 
 #[test]
 fn to_little_curlys() {
-    let text = "if a > 42 {\n$pos = 69\nlet a = 42";
+    let text = "if 1 > 42 {\n$pos = 69\nlet a = 42";
     let format_buffer = format_buffer(text.to_string());
-    assert_eq!(format_buffer, "if a > 42 {\n\t\t$pos = 69\n\t\tlet a = 42");
+    assert_eq!(format_buffer, "if 1 > 42 {\n\t\t$pos = 69\n\t\tlet a = 42");
 }
 
 #[test]
@@ -193,7 +193,7 @@ fn mismatch_square_braces_2() {
     let format_buffer = format_buffer(text.to_string());
     assert_eq!(
         format_buffer,
-        "$item | each {\n\t\t[[{( $in.title $in.text ]\n\t\t\t\t}"
+        "$item | each {\n\t\t[[{( $in.title $in.text ]\n\t\t\t\t\t\t}"
     );
 }
 
